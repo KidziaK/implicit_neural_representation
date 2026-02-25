@@ -22,7 +22,13 @@ class SimpleTrainingData(TrainingData):
 
     def grad(self, model: nn.Module) -> None:
         all_points = torch.cat([self.on_manifold_points, self.off_manifold_points])
+        all_points.requires_grad_(True)
         sdf = model(all_points)
-        grad = torch.autograd.grad(sdf, all_points, create_graph=True)[0]
+        grad = torch.autograd.grad(
+            outputs=sdf,
+            inputs=all_points,
+            grad_outputs=torch.ones_like(sdf),
+            create_graph=True
+        )[0]
         self.on_manifold_points_grad = grad[:self.on_manifold_points.shape[0]]
         self.off_manifold_points_grad = grad[self.on_manifold_points.shape[0]:]
