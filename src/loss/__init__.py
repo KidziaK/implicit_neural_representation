@@ -1,2 +1,2 @@
 from .eikonal_loss import eikonal_loss_l1, eikonal_loss_l2
-from .dirichlet_loss import dirichlet_loss
+from .dirichlet_loss import dirichlet_on_manifold_loss, dirichlet_off_manifold_loss

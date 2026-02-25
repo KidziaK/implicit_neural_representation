@@ -2,7 +2,7 @@ from torch import nn, Tensor
 from .siren import SirenLayer
 
 class SDFNet(nn.Module):
-    def __init__(self, hidden_layers_num: int = 4, hidden_dim: int = 128, in_dims: int = 3, out_dims: int = 1):
+    def __init__(self, hidden_layers_num: int = 4, hidden_dim: int = 64, in_dims: int = 3, out_dims: int = 1):
         super().__init__()
         hidden_layers = [SirenLayer(hidden_dim, hidden_dim) for _ in range(hidden_layers_num)]
 
