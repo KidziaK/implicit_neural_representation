@@ -14,16 +14,13 @@ class SimpleTrainingData(TrainingData):
     on_manifold_points_grad: Tensor | None = None
     off_manifold_points_grad: Tensor | None = None
 
-    def sdf(self, model: nn.Module) -> None:
-        all_points = torch.cat([self.on_manifold_points, self.off_manifold_points])
-        sdf = model(all_points)
-        self.on_manifold_points_sdf = sdf[:self.on_manifold_points.shape[0]]
-        self.off_manifold_points_sdf = sdf[self.on_manifold_points.shape[0]:]
-
     def grad(self, model: nn.Module) -> None:
         all_points = torch.cat([self.on_manifold_points, self.off_manifold_points])
         all_points.requires_grad_(True)
         sdf = model(all_points)
+        self.on_manifold_points_sdf = sdf[:self.on_manifold_points.shape[0]]
+        self.off_manifold_points_sdf = sdf[self.on_manifold_points.shape[0]:]
+
         grad = torch.autograd.grad(
             outputs=sdf,
             inputs=all_points,

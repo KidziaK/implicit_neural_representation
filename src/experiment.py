@@ -24,21 +24,23 @@ class Experiment:
             self.optimizer.zero_grad()
 
             data = self.data_sampler.sample()
-            data.sdf(self.model)
             data.grad(self.model)
 
-            loss = self.loss_function(data)
+            loss_dict = self.loss_function(data)
+            loss = torch.stack(list(loss_dict.values())).sum(dim=0)
+
             y = "\033[33m"
             r = "\033[0m"
-            loss_log_str = f"{y}{loss.item():.6f}{r}"
+
+            loss_list = [f"{name}: {y}{tensor.item():.4f}{r}" for name, tensor in loss_dict.items()]
+            lost_str = ", ".join(loss_list)
+            lost_str += f", total: {y}{loss.item():.4f}{r}"
 
             loss.backward()
 
             self.optimizer.step()
-            
-            y = "\033[33m"
-            r = "\033[0m"
-            logger.info(f"Epoch {y}{epoch + 1}{r}/{self.training_config.epochs} - Loss: {loss_log_str}")
+
+            logger.info(f"Epoch {y}{epoch + 1}{r}/{self.training_config.epochs} - {lost_str}")
 
 
     def evaluate(self, x: Tensor) -> Tensor:

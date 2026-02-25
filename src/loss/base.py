@@ -1,49 +1,17 @@
-import operator
-from abc import ABC, abstractmethod
-from typing import Callable, Any, Union
+from typing import Callable, TypeVar
 from ..data import TrainingData
 from torch import Tensor
+from dataclasses import dataclass
 
-class LossFunction(ABC):
-    @abstractmethod
-    def __call__(self, data: TrainingData) -> Tensor: ...
+FunctionName = TypeVar("FunctionName", bound=str)
 
-    def __add__(self, other: Union["LossFunction", float]) -> "LossFunction":
-        return _BinaryOpLoss(self, other, operator.add)
+@dataclass
+class LossFunction:
+    weights: list[float]
+    losses: list[Callable]
 
-    def __radd__(self, other: float) -> "LossFunction":
-        return _BinaryOpLoss(other, self, operator.add)
-
-    def __sub__(self, other: Union["LossFunction", float]) -> "LossFunction":
-        return _BinaryOpLoss(self, other, operator.sub)
-
-    def __rsub__(self, other: float) -> "LossFunction":
-        return _BinaryOpLoss(other, self, operator.sub)
-
-    def __mul__(self, other: Union["LossFunction", float]) -> "LossFunction":
-        return _BinaryOpLoss(self, other, operator.mul)
-
-    def __rmul__(self, other: float) -> "LossFunction":
-        return _BinaryOpLoss(other, self, operator.mul)
-
-    def __truediv__(self, other: Union["LossFunction", float]) -> "LossFunction":
-        return _BinaryOpLoss(self, other, operator.truediv)
-
-    def __rtruediv__(self, other: float) -> "LossFunction":
-        return _BinaryOpLoss(other, self, operator.truediv)
-
-class _BinaryOpLoss(LossFunction):
-    def __init__(
-        self, 
-        left: Union["LossFunction", float], 
-        right: Union["LossFunction", float], 
-        op: Callable[[Any, Any], Tensor]
-    ):
-        self.left = left
-        self.right = right
-        self.op = op
-
-    def __call__(self, data: TrainingData) -> Tensor:
-        left_val = self.left if isinstance(self.left, (float, int)) else self.left(data)
-        right_val = self.right if isinstance(self.right, (float, int)) else self.right(data)
-        return self.op(left_val, right_val)
+    def __call__(self, data: TrainingData) -> dict[FunctionName, Tensor]:
+        return {
+            loss.__name__: w * loss(data)
+            for loss, w in zip(self.losses, self.weights)
+        }
