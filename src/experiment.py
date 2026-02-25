@@ -30,4 +30,6 @@ class Experiment:
 
     def evaluate(self, x: Tensor) -> Tensor:
         self.model.eval()
-        return self.model(x)
+        flat_x = x.flatten()
+        flat_sdf = self.model(flat_x)
+        return flat_sdf.reshape(x.shape)
