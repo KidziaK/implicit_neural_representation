@@ -1,5 +1,26 @@
+import torch
+
+from typing import Any
+
 import matplotlib.pyplot as plt
 from torch import Tensor
+
+from src.experiment import Experiment
+
+
+def show(obj: Any) -> None:
+    match obj:
+        case Tensor():
+            plot_2d_sdf(obj)
+        case Experiment():
+            res = 256
+            a = 1.
+            interval = torch.linspace(-a, a, res)
+            grid = torch.stack(torch.meshgrid(interval, interval, indexing='ij'), dim=-1)
+            sdf = obj.evaluate(grid)
+            show(sdf)
+        case _:
+            raise NotImplementedError
 
 def plot_2d_sdf(sdf: Tensor) -> None:
     grid_np = sdf.detach().cpu().numpy()
