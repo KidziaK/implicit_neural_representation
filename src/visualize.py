@@ -5,10 +5,12 @@ from typing import Any
 import matplotlib.pyplot as plt
 from torch import Tensor
 
-from src.experiment import Experiment
+
 
 
 def show(obj: Any) -> None:
+    from src.experiment import Experiment
+
     match obj:
         case Tensor():
             plot_2d_sdf(obj)

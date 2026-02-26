@@ -21,8 +21,10 @@ class SquareSampler(DataSampler):
             points_list.append(pts)
             
         points = torch.cat(points_list, dim=0)
+        dim = 0
+        idx = torch.randperm(points.shape[dim])
 
-        self.on_manifold_points = points
+        self.on_manifold_points = points[idx]
         self.off_manifold_points = torch.rand(off_manifold, 2) * 2 - 1
 
     def sample(self) -> SimpleTrainingData:
