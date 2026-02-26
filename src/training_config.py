@@ -1,6 +1,11 @@
 from dataclasses import dataclass
 
 @dataclass
+class VisualizationConfig:
+    every: int = 100
+    resolution: int = 64
+
+@dataclass
 class TrainingConfig:
     epochs: int
     use_projection: bool = False

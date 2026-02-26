@@ -19,3 +19,4 @@ venv.bak/
 # Project specific
 temp/
 uv.lock
+data/

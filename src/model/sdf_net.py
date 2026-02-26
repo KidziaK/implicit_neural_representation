@@ -6,6 +6,7 @@ class SDFNet(nn.Module):
     def __init__(self, hidden_layers_num: int = 4, hidden_dim: int = 64,
                  in_dims: int = 3, out_dims: int = 1):
         super().__init__()
+        self.in_dims = in_dims
 
         hidden_layers = []
         for _ in range(hidden_layers_num):

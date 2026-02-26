@@ -1,8 +1,8 @@
 import torch
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from torch import nn, optim, Tensor
 from .loss.base import LossFunction
-from .training_config import TrainingConfig
+from .training_config import TrainingConfig, VisualizationConfig
 from .data import DataSampler
 from .logger import get_logger
 from .model.projection import project_last_layer_to_zero_on_surface
@@ -17,6 +17,7 @@ class Experiment:
     data_sampler: DataSampler
     training_config: TrainingConfig
     optimizer: optim.Optimizer
+    visualization_config: VisualizationConfig = field(default_factory=VisualizationConfig)
 
     def train(self) -> None:
         self.model.train()
@@ -54,7 +55,8 @@ class Experiment:
 
             logger.info(f"Epoch {y}{epoch + 1}{r}/{self.training_config.epochs} - {lost_str}{proj_str}")
 
-            show(self)
+            if (epoch + 1) % self.visualization_config.every == 0:
+                show(self)
 
     def evaluate(self, x: Tensor) -> Tensor:
         self.model.eval()

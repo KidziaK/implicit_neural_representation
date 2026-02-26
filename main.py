@@ -21,11 +21,21 @@ if __name__ == "__main__":
         schedule = lambda t: 0 if t < 0.3 else 1
 
         loss_function = LossFunction(
-            weights=[10, 2, 0],
-            losses=[loss.dirichlet_on_manifold_loss, loss.eikonal_loss_l2, loss.dirichlet_off_manifold_loss]
+            weights=[
+                10,
+                lambda t: 10 * t,
+                0,
+                lambda t: (1 - t) * 10
+            ],
+            losses=[
+                loss.dirichlet_on_manifold_loss,
+                loss.eikonal_loss_l2,
+                loss.dirichlet_off_manifold_loss,
+                loss.true_distance_loss
+            ]
         )
         data_sampler = data.SquareSampler(on_manifold=3000, off_manifold=4000)
-        training_config = TrainingConfig(epochs=1000, use_projection=True, proj_every=50, proj_eps=1e-5)
+        training_config = TrainingConfig(epochs=1000, use_projection=False, proj_every=50, proj_eps=1e-5)
         optimizer = torch.optim.Adam(model.parameters(), lr=1e-4)
 
         experiment = Experiment(model, loss_function, data_sampler, training_config, optimizer)
