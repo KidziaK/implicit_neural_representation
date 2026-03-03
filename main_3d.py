@@ -16,7 +16,7 @@ def main():
 
     # Note: Bunny will automatically be centered and scaled into [-0.5, 0.5]^3 natively by our MeshSampler update
     data_sampler = MeshSampler(
-        mesh_path="data/bunny.obj",
+        mesh_path="data/00800035_259f5391c3947700164e504e_trimesh_009.obj",
         sampled_surface_points_num=50000,
         on_manifold_points_num=10000,
         off_manifold_points_num=10000,
@@ -36,7 +36,7 @@ def main():
     )
 
     training_config = TrainingConfig(
-        epochs=10000,
+        epochs=1000,
         use_projection=False,
         proj_every=10,
         proj_eps=1e-5
@@ -50,7 +50,7 @@ def main():
         data_sampler=data_sampler,
         training_config=training_config,
         optimizer=optimizer,
-        visualization_config=VisualizationConfig(every=1000, resolution=64)
+        visualization_config=VisualizationConfig(visualize=False, every=250, resolution=256)
     )
 
     logger.info("Initializing 3D SDF Training for Stanford Bunny...")

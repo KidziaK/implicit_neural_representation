@@ -3,7 +3,7 @@ import torch
 from src.experiment import Experiment
 from src.loss.base import LossFunction
 from src.model.sdf_net import SDFNet
-from src.training_config import TrainingConfig
+from src.training_config import TrainingConfig, VisualizationConfig
 from src.visualize import show
 
 import src.loss as loss
@@ -25,7 +25,7 @@ if __name__ == "__main__":
                 10,
                 lambda t: 10 * t,
                 0,
-                lambda t: (1 - t) * 10
+                0
             ],
             losses=[
                 loss.dirichlet_on_manifold_loss,
@@ -35,9 +35,9 @@ if __name__ == "__main__":
             ]
         )
         data_sampler = data.SquareSampler(on_manifold=3000, off_manifold=4000)
-        training_config = TrainingConfig(epochs=1000, use_projection=False, proj_every=50, proj_eps=1e-5)
+        training_config = TrainingConfig(epochs=1000, use_projection=True, proj_every=10000, proj_eps=1e-6)
         optimizer = torch.optim.Adam(model.parameters(), lr=1e-4)
 
-        experiment = Experiment(model, loss_function, data_sampler, training_config, optimizer)
+        experiment = Experiment(model, loss_function, data_sampler, training_config, optimizer, VisualizationConfig(every=1, resolution=128))
         experiment.train()
 

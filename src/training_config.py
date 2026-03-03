@@ -4,6 +4,7 @@ from dataclasses import dataclass
 class VisualizationConfig:
     every: int = 100
     resolution: int = 64
+    visualize: bool = True
 
 @dataclass
 class TrainingConfig:

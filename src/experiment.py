@@ -6,7 +6,8 @@ from .training_config import TrainingConfig, VisualizationConfig
 from .data import DataSampler
 from .logger import get_logger
 from .model.projection import project_last_layer_to_zero_on_surface
-from .visualize import show
+from .visualize import show, extract_mesh
+import os
 
 logger = get_logger(__name__)
 
@@ -55,8 +56,20 @@ class Experiment:
 
             logger.info(f"Epoch {y}{epoch + 1}{r}/{self.training_config.epochs} - {lost_str}{proj_str}")
 
-            if (epoch + 1) % self.visualization_config.every == 0:
-                show(self)
+            if self.visualization_config.visualize and (epoch + 1) % self.visualization_config.every == 0:
+                show(self, epoch=epoch + 1)
+        
+        # Save final mesh at the end of training if in 3D mode
+        if self.model.in_dims == 3:
+            import open3d as o3d
+            try:
+                mesh = extract_mesh(self)
+                os.makedirs("visualization", exist_ok=True)
+                final_path = "visualization/final_mesh.stl"
+                o3d.io.write_triangle_mesh(final_path, mesh)
+                logger.info(f"Saved final 3D reconstruction mesh to {final_path}")
+            except Exception as e:
+                logger.error(f"Failed to extract and save final mesh: {e}")
 
     def evaluate(self, x: Tensor) -> Tensor:
         self.model.eval()
