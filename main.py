@@ -1,3 +1,4 @@
+import torch
 from torch import optim
 from src.base.training_config import TrainingConfig
 from src.sdf_net import SDFNet, ActivationType
@@ -7,16 +8,19 @@ from src.io.load import load_point_cloud_from_mesh_file
 from loguru import logger
 
 if __name__ == "__main__":
+    if not torch.cuda.is_available():
+        logger.warning("CUDA not available, training on CPU")
+
+    config = TrainingConfig(
+        epochs=1000
+    )
+
     model = SDFNet(
         in_features=3,
         hidden_dim=256,
         hidden_layers=4,
         activation_type=ActivationType.SIREN
-    )
-
-    config = TrainingConfig(
-        epochs=1000
-    )
+    ).to(config.device)
 
     optimizer = optim.Adam(model.parameters())
 
@@ -34,4 +38,4 @@ if __name__ == "__main__":
         surface_points=surface_points
     )
 
-    logger.info("Training Done", training_time_s=result.training_time_s)
+    logger.info("Training Done", f"Total training time: {result.training_time_s}s")
