@@ -154,13 +154,13 @@ def load_and_sample_mesh(file_path, num_points=10000):
     center = np.mean(points, axis=0)
     points -= center
     max_dist = np.max(np.linalg.norm(points, axis=1))
-    points = (points / max_dist) * 0.8
+    points = (points / max_dist)
 
     return torch.tensor(points, dtype=torch.float32), pcd
 
 
 def extract_and_visualize_mesh(model, device, original_pcd, output_path, resolution=128,
-                               bounds=1.0):
+                               bounds=1.1):
     """
     Extracts the zero-level set using skimage's Marching Cubes, saves it, and visualizes it.
     """
@@ -212,7 +212,19 @@ def extract_and_visualize_mesh(model, device, original_pcd, output_path, resolut
 
 
 def train_pipeline(file_path, act_type=ActivationType.SIREN):
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    if torch.cuda.is_available():
+        device = torch.device("cuda")
+        print(f"✓ Using GPU: {torch.cuda.get_device_name(0)}")
+        print(f"  CUDA Version: {torch.version.cuda}")
+        print(f"  Device: {device}")
+    else:
+        device = torch.device("cpu")
+        print("⚠ WARNING: CUDA not available, using CPU")
+        print("  This will be significantly slower!")
+        print("  To enable GPU support:")
+        print("  1. Check NVIDIA drivers: nvidia-smi")
+        print("  2. Install PyTorch with CUDA: pip install torch --index-url https://download.pytorch.org/whl/cu121")
+        print("  3. Run: python check_cuda_setup.py for diagnostics")
     print(f"Initializing network with {act_type.name} activation...")
     model = DevelopableSDF(activation_type=act_type).to(device)
 
@@ -221,12 +233,12 @@ def train_pipeline(file_path, act_type=ActivationType.SIREN):
     optimizer = optim.Adam(model.parameters(), lr=lr)
 
     surface_points_tensor, original_pcd = load_and_sample_mesh(file_path,
-                                                               num_points=10000)
+                                                               num_points=20000)
     surface_points = surface_points_tensor.to(device)
 
     original_pcd.points = o3d.utility.Vector3dVector(surface_points_tensor.numpy())
 
-    epochs = 10000
+    epochs = 5000
     batch_size_vol = 5000
 
     print("Starting optimization on loaded shape...")
@@ -236,48 +248,59 @@ def train_pipeline(file_path, act_type=ActivationType.SIREN):
 
         # 1. Manifold Phase
         p_surface = surface_points.clone().requires_grad_(True)
-        sdf_surface = model(p_surface)
+
+        # Calculate surrogate, gradients, and SDF specifically on the manifold points
+        S_surface, grad_surface, sdf_surface = fast_double_trace_surrogate(model, p_surface)
+
         loss_manifold = torch.mean(torch.abs(sdf_surface))
+        loss_eikonal_surface = torch.mean((torch.norm(grad_surface, dim=-1) - 1.0).abs())
+
+        if act_type == ActivationType.RELU:
+            loss_developable_surface = torch.tensor(0.0, device=device)
+        else:
+            loss_developable_surface = generalized_charbonnier_loss(S_surface)
 
         # 2. Global Volumetric Phase
-        p_volume = (torch.rand(batch_size_vol, 3, device=device) * 2.0 - 1.0)
+        p_volume = 1.1 * (torch.rand(batch_size_vol, 3, device=device) * 2.0 - 1.0)
         p_volume.requires_grad_(True)
 
+        # Calculate surrogate, gradients, and SDF on the volume points
         S_volume, grad_volume, sdf_volume = fast_double_trace_surrogate(model, p_volume)
 
-        # Eikonal condition
-        loss_eikonal = torch.mean((torch.norm(grad_volume, dim=-1) - 1.0) ** 2)
+        loss_eikonal_volume = torch.mean((torch.norm(grad_volume, dim=-1) - 1.0).abs())
 
-        # Volumetric Developability Loss (Curvature)
-        # We skip this entirely if ReLU is used, as the second derivative is identically 0
         if act_type == ActivationType.RELU:
-            loss_developable = torch.tensor(0.0, device=device)
+            loss_developable_volume = torch.tensor(0.0, device=device)
         else:
-            loss_developable = generalized_charbonnier_loss(S_volume)
+            loss_developable_volume = generalized_charbonnier_loss(S_volume)
 
-        # Dirichlet Non-Manifold penalty
-        loss_dnm = non_manifold_penalty(sdf_volume, alpha_decay=50.0)
+        # Dirichlet Non-Manifold penalty applies ONLY to the volumetric points
+        loss_dnm = non_manifold_penalty(sdf_volume, alpha_decay=100.0)
 
-        # Combine losses
-        total_loss = loss_manifold + (0.1 * loss_eikonal) + (
-                    0.01 * loss_developable) + (0.05 * loss_dnm)
+        # Combine surface and volumetric constraints
+        loss_eikonal = loss_eikonal_surface + loss_eikonal_volume
+        loss_developable = loss_developable_surface + loss_developable_volume
+
+        # Combine total losses using your specified weights
+        total_loss = 7000 * loss_manifold + (50 * loss_eikonal) + (
+                10 * loss_developable) + (600 * loss_dnm)
 
         total_loss.backward()
         optimizer.step()
 
         if epoch % 100 == 0 or epoch == epochs - 1:
             print(
-                f"Epoch {epoch:<4} | Total: {total_loss.item():.4f} | Eikonal: {loss_eikonal.item():.4f} | Dev: {loss_developable.item():.4f} | DNM: {loss_dnm.item():.4f}")
+                f"Epoch {epoch:<4} | Total: {total_loss.item():.4f} | OnManifold: {loss_manifold.item():.4f} | Eikonal: {loss_eikonal.item():.4f} | Dev: {loss_developable.item():.4f} | DNM: {loss_dnm.item():.4f}")
 
     base_name, ext = os.path.splitext(file_path)
     output_mesh_path = f"{base_name}_reconstructed_{act_type.name.lower()}.obj"
 
     extract_and_visualize_mesh(model, device, original_pcd,
-                               output_path=output_mesh_path, resolution=170)
+                               output_path=output_mesh_path, resolution=256)
 
 
 if __name__ == "__main__":
-    obj_path = "/Users/mikolajkida/Documents/github/implicit_neural_representation/data/00808652_a5311ecc077bfdd2cc3d9aa7_trimesh_000.obj"
+    obj_path = r"C:\Users\kidzi\Downloads\abc_0000_obj_v00\00000008\00000008_9b3d6a97e8de4aa193b81000_trimesh_000.obj"
 
     # You can now easily swap out the activation here!
     train_pipeline(obj_path, act_type=ActivationType.SIREN)

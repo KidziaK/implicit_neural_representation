@@ -1,4 +1,5 @@
-from dataclasses import dataclass, Field, fields
+import torch
+from dataclasses import dataclass, field, fields
 from typing import Callable
 
 FlexibleLossWeight = Callable[[float], float] | float
@@ -10,12 +11,12 @@ class LambdaConverterMeta(type):
 
         def __init__(self, *args, **kwargs):
             orig_init(self, *args, **kwargs)
-            for field in fields(self):
-                value = getattr(self, field.name)
+            for f in fields(self):
+                value = getattr(self, f.name)
                 if isinstance(value, (float, int)):
                     def make_lambda(v):
                         return lambda x: v
-                    setattr(self, field.name, make_lambda(value))
+                    setattr(self, f.name, make_lambda(value))
 
         cls.__init__ = __init__
         return cls
@@ -31,9 +32,11 @@ class LossWeights(metaclass=LambdaConverterMeta):
 
 @dataclass
 class TrainingConfig:
+    device: str = "cuda" if torch.cuda.is_available() else "cpu"
+
     epochs: int = 10000
 
-    loss_weights: LossWeights = Field(default_factory=LossWeights)
+    loss_weights: LossWeights = field(default_factory=LossWeights)
 
     dnm_alpha: float = 100.0
 

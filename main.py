@@ -1,43 +1,37 @@
-import torch
-
-from src.experiment import Experiment
-from src.loss.base import LossFunction
-from src.model.sdf_net import SDFNet
-from src.training_config import TrainingConfig, VisualizationConfig
-from src.visualize import show
-
-import src.loss as loss
-import src.data as data
+from torch import optim
+from src.base.training_config import TrainingConfig
+from src.sdf_net import SDFNet, ActivationType
+from src.training import train
+from src.loss.digs import digs
+from src.io.load import load_point_cloud_from_mesh_file
+from loguru import logger
 
 if __name__ == "__main__":
-    for _ in range(1):
-        model = SDFNet(
-            in_dims=2,
-            hidden_dim=128,
-            hidden_layers_num=4,
-            out_dims=1
-        )
+    model = SDFNet(
+        in_features=3,
+        hidden_dim=256,
+        hidden_layers=4,
+        activation_type=ActivationType.SIREN
+    )
 
-        schedule = lambda t: 0 if t < 0.3 else 1
+    config = TrainingConfig(
+        epochs=1000
+    )
 
-        loss_function = LossFunction(
-            weights=[
-                10,
-                lambda t: 10 * t,
-                0,
-                0
-            ],
-            losses=[
-                loss.dirichlet_on_manifold_loss,
-                loss.eikonal_loss_l2,
-                loss.dirichlet_off_manifold_loss,
-                loss.true_distance_loss
-            ]
-        )
-        data_sampler = data.SquareSampler(on_manifold=3000, off_manifold=4000)
-        training_config = TrainingConfig(epochs=1000, use_projection=True, proj_every=10000, proj_eps=1e-6)
-        optimizer = torch.optim.Adam(model.parameters(), lr=1e-4)
+    optimizer = optim.Adam(model.parameters())
 
-        experiment = Experiment(model, loss_function, data_sampler, training_config, optimizer, VisualizationConfig(every=1, resolution=128))
-        experiment.train()
+    surface_points = load_point_cloud_from_mesh_file(
+        mesh_file_path=r"C:\Users\kidzi\Downloads\abc_0000_obj_v00\00000008\00000008_9b3d6a97e8de4aa193b81000_trimesh_000.obj",
+        n=config.surface_points,
+        device=config.device
+    )
 
+    result = train(
+        model=model,
+        config=config,
+        loss_function=digs,
+        optimizer=optimizer,
+        surface_points=surface_points
+    )
+
+    logger.info("Training Done", training_time_s=result.training_time_s)

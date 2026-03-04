@@ -2,6 +2,7 @@ from torch import nn, optim, Tensor
 from .base.training_config import TrainingConfig
 from .base.loss import LossFunction
 from dataclasses import dataclass
+from loguru import logger
 from time import time
 
 @dataclass
@@ -13,6 +14,8 @@ def train(model: nn.Module, config: TrainingConfig, optimizer: optim.Optimizer, 
 
     st = time()
 
+    logger.info("Training started")
+
     for epoch in range(config.epochs):
         optimizer.zero_grad()
 
@@ -23,6 +26,9 @@ def train(model: nn.Module, config: TrainingConfig, optimizer: optim.Optimizer, 
         loss.backward()
 
         optimizer.step()
+
+        if epoch % 100 == 0:
+            logger.info(f"Epoch [{epoch}/{config.epochs}] | Loss {loss.item():.4f}", loss_dict=loss_dict)
 
     ed = time()
 
