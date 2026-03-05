@@ -21,3 +21,5 @@ temp/
 uv.lock
 data/
 visualization/
+
+*.pdf

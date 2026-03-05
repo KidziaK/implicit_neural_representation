@@ -1,12 +1,11 @@
 import torch
 import open3d as o3d
 from torch import optim
-from reconstruction import extract_and_visualize_mesh
+from src.reconstruction import extract_and_visualize_mesh
 from src.base.training_config import TrainingConfig
 from src.sdf_net import SDFNet, ActivationType
 from src.training import train
 import src.loss as loss
-from src.loss.developable import developable
 from src.io.load import load_point_cloud_from_mesh_file
 from loguru import logger
 import numpy as np
@@ -70,7 +69,7 @@ if __name__ == "__main__":
     training_config = TrainingConfig(
         mesh_input_path=r"C:\Users\kidzi\Downloads\abc_0000_obj_v00\00000002\00000002_1ffb81a71e5b402e966b9341_trimesh_001.obj",
         epochs=1000,
-        loss_function=loss.developable,
+        loss_function=loss.ncadr,
         volume_points=10000
     )
 
