@@ -45,7 +45,7 @@ class SDFNet(nn.Module):
 
         match activation_type:
             case ActivationType.SIREN:
-                layers.append(SineLayer(in_features, hidden_dim, is_first=True, omega_0=1.0))
+                layers.append(SineLayer(in_features, hidden_dim, is_first=True))
                 layers += [SineLayer(hidden_dim, hidden_dim, is_first=False) for _ in range(hidden_layers)]
             case ActivationType.SOFTPLUS:
                 layers.append(nn.Linear(in_features, hidden_dim))

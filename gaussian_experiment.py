@@ -238,7 +238,7 @@ def train_pipeline(file_path, act_type=ActivationType.SIREN):
 
     original_pcd.points = o3d.utility.Vector3dVector(surface_points_tensor.numpy())
 
-    epochs = 5000
+    epochs = 1000
     batch_size_vol = 5000
 
     print("Starting optimization on loaded shape...")

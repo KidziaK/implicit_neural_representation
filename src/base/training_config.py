@@ -32,6 +32,9 @@ class LossWeights(metaclass=LambdaConverterMeta):
 
 @dataclass
 class TrainingConfig:
+    mesh_input_path: str
+    loss_function: Callable
+
     device: str = "cuda" if torch.cuda.is_available() else "cpu"
 
     epochs: int = 10000
@@ -47,3 +50,7 @@ class TrainingConfig:
     learning_rate: float = 5e-5
 
     volume_bounds: float = 1.1
+
+    reconstruction_resolution: int = 256
+    visualize: bool = False
+    output_path: str | None = None
