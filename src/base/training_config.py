@@ -4,6 +4,17 @@ from typing import Callable
 
 FlexibleLossWeight = Callable[[float], float] | float
 
+
+def ncr_linear_decay(t: float) -> float:
+    if t < 0.2:
+        return 10.0
+    if t < 0.5:
+        return 10.0 + (0.001 - 10.0) * (t - 0.2) / (0.5 - 0.2)
+    if t < 1.0:
+        return 0.001 + (0.0 - 0.001) * (t - 0.5) / (1.0 - 0.5)
+    return 0.0
+
+
 class LambdaConverterMeta(type):
     def __new__(mcs, name, bases, namespace):
         cls = super().__new__(mcs, name, bases, namespace)
@@ -46,8 +57,10 @@ class TrainingConfig:
 
     dnm_alpha: float = 100.0
 
+    bidirectional_ncr: bool = True
+
     surface_points: int = 20000
-    manifold_points: int = 10000
+    near_surface_points: int = 10000
     volume_points: int = 10000
 
     learning_rate: float = 5e-5

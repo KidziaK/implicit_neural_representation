@@ -2,7 +2,7 @@ import math
 import torch
 from torch import Tensor, nn
 from ..base.training_config import TrainingConfig
-from .sample import sample_surface, sample_volume, sample_near_surface
+from .sample import sample_volume, sample_near_surface
 from .dirichlet import dirichlet_loss
 from .dnm import dnm_loss
 from .eikonal import eikonal_loss_from_points_values
@@ -56,18 +56,19 @@ def ncadr_loss(x: Tensor, y: Tensor, eps: float = 1e-12) -> Tensor:
     return loss_vals.mean()
 
 def ncadr(model: nn.Module, config: TrainingConfig, surface_points: Tensor, t: float) -> dict[str, Tensor]:
-    manifold_points = sample_surface(surface_points, config.manifold_points)
     volume_points = sample_volume(n=config.volume_points, bounds=config.volume_bounds, device=config.device)
-    near_points = sample_near_surface(manifold_points)
+    n_near = min(config.near_surface_points, surface_points.shape[0])
+    surface_for_near = surface_points[torch.randperm(surface_points.shape[0], device=surface_points.device)[:n_near]]
+    near_points = sample_near_surface(surface_for_near)
 
-    manifold_points.requires_grad_(True)
+    surface_points = surface_points.requires_grad_(True)
     near_points.requires_grad_(True)
     
-    x_for_eikonal = torch.cat([manifold_points, near_points], dim=0)
+    x_for_eikonal = torch.cat([surface_points, near_points], dim=0)
     x_for_eikonal.requires_grad_(True)
 
     with torch.enable_grad():
-        y_manifold = model(manifold_points)
+        y_manifold = model(surface_points)
         y_volume = model(volume_points)
         y_near = model(near_points)
         
@@ -78,8 +79,13 @@ def ncadr(model: nn.Module, config: TrainingConfig, surface_points: Tensor, t: f
     loss_dirichlet = loss_weights.dirichlet(t) * dirichlet_loss(y_manifold)
     loss_dnm = loss_weights.dnm(t) * dnm_loss(y_volume, alpha=config.dnm_alpha)
     loss_eikonal = loss_weights.eikonal(t) * eikonal_loss_from_points_values(x_for_eikonal, y_for_eikonal)
-    
-    loss_ncadr = loss_weights.ncr(t) * ncadr_loss(near_points, y_near)
+
+    loss_near = ncadr_loss(near_points, y_near)
+    if config.bidirectional_ncr:
+        loss_manifold = ncadr_loss(surface_points, y_manifold)
+        loss_ncadr = loss_weights.ncr(t) * (0.5 * loss_near + 0.5 * loss_manifold)
+    else:
+        loss_ncadr = loss_weights.ncr(t) * loss_near
 
     return {
         "loss_dirichlet": loss_dirichlet,
