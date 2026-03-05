@@ -35,6 +35,9 @@ class TrainingConfig:
     mesh_input_path: str
     loss_function: Callable
 
+    hidden_dim: int = 256
+    hidden_layers: int = 4
+
     device: str = "cuda" if torch.cuda.is_available() else "cpu"
 
     epochs: int = 10000

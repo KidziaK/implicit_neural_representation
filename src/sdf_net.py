@@ -50,7 +50,7 @@ class SDFNet(nn.Module):
             case ActivationType.SOFTPLUS:
                 layers.append(nn.Linear(in_features, hidden_dim))
                 layers.append(nn.Softplus(beta=100))
-                for _ in range(hidden_layers):
+                for _ in range(hidden_layers - 1):
                     layers.append(nn.Linear(hidden_dim, hidden_dim))
                     layers.append(nn.Softplus(beta=100))
             case ActivationType.RELU:
@@ -62,6 +62,10 @@ class SDFNet(nn.Module):
 
         layers.append(nn.Linear(hidden_dim, 1))
         self.net = nn.Sequential(*layers)
+
+        if activation_type==ActivationType.SIREN:
+            with torch.no_grad():
+                self.net[-1].weight.uniform_(-np.sqrt(6 / hidden_dim) / 30, np.sqrt(6 / hidden_dim) / 30)
 
     def forward(self, x: Tensor) -> Tensor:
         return self.net(x)

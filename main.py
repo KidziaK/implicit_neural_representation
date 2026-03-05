@@ -13,12 +13,12 @@ from loguru import logger
 def run_experiment(config: TrainingConfig):
     model = SDFNet(
         in_features=3,
-        hidden_dim=256,
-        hidden_layers=4,
+        hidden_dim=config.hidden_dim,
+        hidden_layers=config.hidden_layers,
         activation_type=ActivationType.SIREN
     ).to(config.device)
 
-    optimizer = optim.Adam(model.parameters())
+    optimizer = optim.Adam(model.parameters(), lr=config.learning_rate)
 
     surface_points = load_point_cloud_from_mesh_file(
         mesh_file_path=config.mesh_input_path,
@@ -34,7 +34,7 @@ def run_experiment(config: TrainingConfig):
         surface_points=surface_points
     )
 
-    logger.info("Training Done", f"Total training time: {result.training_time_s}s")
+    logger.info(f"Training Done, total training time: {result.training_time_s}s")
 
     mesh = extract_and_visualize_mesh(
         model=model,
@@ -48,9 +48,9 @@ if __name__ == "__main__":
         logger.warning("CUDA not available, training on CPU")
 
     training_config = TrainingConfig(
-        mesh_input_path=r"C:\Users\kidzi\Downloads\abc_0000_obj_v00\00000008\00000008_9b3d6a97e8de4aa193b81000_trimesh_000.obj",
-        epochs=1000,
-        loss_function=loss.developable
+        mesh_input_path=r"C:\Users\kidzi\Downloads\abc_0000_obj_v00\00000002\00000002_1ffb81a71e5b402e966b9341_trimesh_001.obj",
+        epochs=10000,
+        loss_function=loss.developable,
     )
 
     run_experiment(training_config)
