@@ -10,6 +10,7 @@ from .dnm import dnm_loss
 def developable(model: nn.Module, config: TrainingConfig, surface_points: Tensor, t: float) -> dict[str, Tensor]:
     manifold_points = sample_surface(surface_points, config.manifold_points)
     volume_points = sample_volume(n=config.volume_points, bounds=config.volume_bounds, device=config.device)
+    manifold_points.requires_grad_(True)
 
     x = torch.cat([manifold_points, volume_points], dim=0)
     x.requires_grad_(True)
@@ -27,12 +28,14 @@ def developable(model: nn.Module, config: TrainingConfig, surface_points: Tensor
         create_graph=True
     )[0]
 
+    y_grad_manifold = grad_y[:manifold_points.shape[0]]
+
     loss_weights = config.loss_weights
 
     loss_dirichlet = loss_weights.dirichlet(t) * dirichlet_loss(y_manifold)
     loss_dnm = loss_weights.dnm(t) * dnm_loss(y_volume, alpha=config.dnm_alpha)
     loss_eikonal = loss_weights.eikonal(t) * eikonal_loss_from_grad(grad_y)
-    loss_developable = loss_weights.developable(t) * double_trace_loss(x, grad_y)
+    loss_developable = loss_weights.developable(t) * double_trace_loss(manifold_points, y_grad_manifold)
 
     return {
         "loss_dirichlet": loss_dirichlet,

@@ -9,6 +9,8 @@ import src.loss as loss
 from src.loss.developable import developable
 from src.io.load import load_point_cloud_from_mesh_file
 from loguru import logger
+import numpy as np
+from src.measure import chamfer_distance, hausdorff_distance
 
 def run_experiment(config: TrainingConfig):
     model = SDFNet(
@@ -34,12 +36,30 @@ def run_experiment(config: TrainingConfig):
         surface_points=surface_points
     )
 
-    logger.info(f"Training Done, total training time: {result.training_time_s}s")
+    logger.info(f"Training Done, total training time: {int(result.training_time_s)}s")
 
     mesh = extract_and_visualize_mesh(
         model=model,
         config=config,
     )
+
+    logger.info("Sampling 100k points from original and reconstructed meshes for evaluation...")
+    original_points_tensor = load_point_cloud_from_mesh_file(
+        mesh_file_path=config.mesh_input_path,
+        n=100000,
+        bounds=config.volume_bounds,
+        device="cpu"
+    )
+    original_points = original_points_tensor.numpy()
+
+    reconstructed_pc = mesh.sample_points_uniformly(number_of_points=100000)
+    reconstructed_points = np.asarray(reconstructed_pc.points)
+
+    chamfer_dist = chamfer_distance(original_points, reconstructed_points)
+    hausdorff_dist = hausdorff_distance(original_points, reconstructed_points)
+
+    logger.info(f"Chamfer Distance: {chamfer_dist:.6f}")
+    logger.info(f"Hausdorff Distance: {hausdorff_dist:.6f}")
 
     o3d.visualization.draw_geometries([mesh])
 
@@ -49,8 +69,9 @@ if __name__ == "__main__":
 
     training_config = TrainingConfig(
         mesh_input_path=r"C:\Users\kidzi\Downloads\abc_0000_obj_v00\00000002\00000002_1ffb81a71e5b402e966b9341_trimesh_001.obj",
-        epochs=10000,
+        epochs=1000,
         loss_function=loss.developable,
+        volume_points=10000
     )
 
     run_experiment(training_config)

@@ -48,7 +48,7 @@ class TrainingConfig:
 
     surface_points: int = 20000
     manifold_points: int = 10000
-    volume_points: int = 5000
+    volume_points: int = 10000
 
     learning_rate: float = 5e-5
 
