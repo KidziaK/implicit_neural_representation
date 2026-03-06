@@ -1,8 +1,8 @@
 import torch
-from src.base.training_config import TrainingConfig, LossWeights
-import src.loss as loss
+from inr.base.training_config import TrainingConfig, LossWeights
+import inr.loss as loss
 from loguru import logger
-from src.experiment import run_experiment
+from inr.experiment import run_experiment
 from pathlib import Path
 from itertools import product
 
@@ -13,7 +13,7 @@ if __name__ == "__main__":
 
     seeds = [42]
     experiment_name = "dummy"
-    epochs = 10000
+    epochs = 50
     parts = ["00800003"]
     losses = [loss.developable_loss]
 

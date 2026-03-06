@@ -78,7 +78,7 @@ def gaussian_curvature_loss(
 
 def ncadr_loss(model: nn.Module, config: TrainingConfig, surface_points: Tensor, t: float) -> dict[str, Tensor]:
     volume_points = sample_volume(n=config.volume_points, bounds=config.volume_bounds, device=config.device)
-    n_near = min(config.near_surface_points, surface_points.shape[0])
+    n_near = surface_points.shape[0]
     surface_for_near = surface_points[torch.randperm(surface_points.shape[0], device=surface_points.device)[:n_near]]
     near_points = sample_near_surface(surface_for_near)
 

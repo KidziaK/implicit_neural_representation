@@ -1,13 +1,13 @@
 import open3d as o3d
 from torch import optim
-from src.reconstruction import extract_and_visualize_mesh
-from src.base.training_config import TrainingConfig
-from src.sdf_net import SDFNet, ActivationType
-from src.training import train
-from src.io.load import load_point_cloud_from_mesh_file
+from inr.reconstruction import extract_and_visualize_mesh
+from inr.base.training_config import TrainingConfig
+from inr.sdf_net import SDFNet, ActivationType
+from inr.training import train
+from inr.io.load import load_point_cloud_from_mesh_file
 from loguru import logger
 import numpy as np
-from src.measure import chamfer_distance, hausdorff_distance
+from inr.measure import chamfer_distance, hausdorff_distance
 
 
 def run_experiment(config: TrainingConfig, visualize: bool = False):
@@ -40,6 +40,9 @@ def run_experiment(config: TrainingConfig, visualize: bool = False):
         model=model,
         config=config,
     )
+
+    if config.testing_mode:
+        return
 
     logger.info("Sampling 100k points from original and reconstructed meshes for evaluation...")
     original_points_tensor = load_point_cloud_from_mesh_file(
