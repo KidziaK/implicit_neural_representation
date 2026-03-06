@@ -15,7 +15,7 @@ if __name__ == "__main__":
     experiment_name = "dummy"
     epochs = 100
     parts = ["00800003"]
-    losses = [loss.developable_loss]
+    losses = [loss.digs_loss]
 
     for loss_function, part_name, seed in product(losses, parts, seeds):
         output_path = Path(f"output/abc/{experiment_name}/{part_name}_{loss_function.__name__}_{epochs}.glb")
