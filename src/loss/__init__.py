@@ -1,3 +1,3 @@
-from .digs import digs
-from .developable import developable
-from .ncadr import ncadr
+from .digs import digs_loss
+from .developable import developable_loss
+from .ncadr import ncadr_loss

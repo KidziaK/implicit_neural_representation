@@ -30,7 +30,7 @@ def double_trough_curve(curvature: Tensor) -> Tensor:
     return a * (t**4) + b * (t**3) + c * (t**2) + d * t
 
 
-def ncadr_loss(
+def gaussian_curvature_loss(
     x: Tensor,
     y: Tensor,
     eps: float = 1e-12,
@@ -76,7 +76,7 @@ def ncadr_loss(
     return loss_vals.mean()
 
 
-def ncadr(model: nn.Module, config: TrainingConfig, surface_points: Tensor, t: float) -> dict[str, Tensor]:
+def ncadr_loss(model: nn.Module, config: TrainingConfig, surface_points: Tensor, t: float) -> dict[str, Tensor]:
     volume_points = sample_volume(n=config.volume_points, bounds=config.volume_bounds, device=config.device)
     n_near = min(config.near_surface_points, surface_points.shape[0])
     surface_for_near = surface_points[torch.randperm(surface_points.shape[0], device=surface_points.device)[:n_near]]
@@ -101,9 +101,9 @@ def ncadr(model: nn.Module, config: TrainingConfig, surface_points: Tensor, t: f
     loss_dnm = loss_weights.dnm(t) * dnm_loss(y_volume, alpha=config.dnm_alpha)
     loss_eikonal = loss_weights.eikonal(t) * eikonal_loss_from_points_values(x_for_eikonal, y_for_eikonal)
 
-    loss_near = ncadr_loss(near_points, y_near)
+    loss_near = gaussian_curvature_loss(near_points, y_near)
     if config.bidirectional_ncr:
-        loss_manifold = ncadr_loss(surface_points, y_manifold)
+        loss_manifold = gaussian_curvature_loss(surface_points, y_manifold)
         loss_ncadr = loss_weights.ncr(t) * (0.5 * loss_near + 0.5 * loss_manifold)
     else:
         loss_ncadr = loss_weights.ncr(t) * loss_near

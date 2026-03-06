@@ -7,7 +7,7 @@ from .eikonal import eikonal_loss_from_points_values
 from .dnm import dnm_loss
 
 
-def digs(model: nn.Module, config: TrainingConfig, surface_points: Tensor, t: float) -> dict[str, Tensor]:
+def digs_loss(model: nn.Module, config: TrainingConfig, surface_points: Tensor, t: float) -> dict[str, Tensor]:
     volume_points = sample_volume(n=config.volume_points, bounds=config.volume_bounds, device=config.device)
 
     x = torch.cat([surface_points, volume_points], dim=0)

@@ -4,4 +4,4 @@
 - just (https://github.com/casey/just)
 
 # Usage
-```uv run main.py```
+Adjust training config in `main.py` and run ```uv run main.py```.

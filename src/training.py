@@ -30,7 +30,7 @@ def train(
         t = epoch / config.epochs
 
         loss_dict = loss_function(model, config, surface_points, t)
-        loss = Tensor(sum(l for l in loss_dict.values()))
+        loss = Tensor(sum(loss_tensor for loss_tensor in loss_dict.values()))
         loss.backward()
 
         optimizer.step()

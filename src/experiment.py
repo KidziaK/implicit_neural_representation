@@ -1,4 +1,3 @@
-import torch
 import open3d as o3d
 from torch import optim
 from src.reconstruction import extract_and_visualize_mesh
