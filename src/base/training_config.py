@@ -20,6 +20,7 @@ class LambdaConverterMeta(type):
         cls.__init__ = __init__
         return cls
 
+
 def _const_weight(v: float) -> Callable[[float], float]:
     return lambda x: v
 
@@ -39,6 +40,7 @@ class LossWeights(metaclass=LambdaConverterMeta):
         if name in type(self)._weight_names and isinstance(value, (int, float)):
             value = _const_weight(float(value))
         super().__setattr__(name, value)
+
 
 @dataclass
 class TrainingConfig:

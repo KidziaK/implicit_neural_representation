@@ -10,12 +10,13 @@ from loguru import logger
 import numpy as np
 from src.measure import chamfer_distance, hausdorff_distance
 
+
 def run_experiment(config: TrainingConfig, visualize: bool = False):
     model = SDFNet(
         in_features=3,
         hidden_dim=config.hidden_dim,
         hidden_layers=config.hidden_layers,
-        activation_type=ActivationType.SIREN
+        activation_type=ActivationType.SIREN,
     ).to(config.device)
 
     optimizer = optim.Adam(model.parameters(), lr=config.learning_rate)
@@ -23,7 +24,7 @@ def run_experiment(config: TrainingConfig, visualize: bool = False):
     surface_points = load_point_cloud_from_mesh_file(
         mesh_file_path=config.mesh_input_path,
         n=config.surface_points,
-        device=config.device
+        device=config.device,
     )
 
     result = train(
@@ -31,7 +32,7 @@ def run_experiment(config: TrainingConfig, visualize: bool = False):
         config=config,
         loss_function=config.loss_function,
         optimizer=optimizer,
-        surface_points=surface_points
+        surface_points=surface_points,
     )
 
     logger.info(f"Training Done, total training time: {int(result.training_time_s)}s")
@@ -46,7 +47,7 @@ def run_experiment(config: TrainingConfig, visualize: bool = False):
         mesh_file_path=config.mesh_input_path,
         n=100000,
         bounds=config.volume_bounds,
-        device="cpu"
+        device="cpu",
     )
     original_points = original_points_tensor.numpy()
 

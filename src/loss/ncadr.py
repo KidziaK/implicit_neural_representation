@@ -21,13 +21,13 @@ def ncr_linear_decay(t: float) -> float:
 def double_trough_curve(curvature: Tensor) -> Tensor:
     pi = math.pi
     t = curvature.abs()
-    
-    a = (64 * pi - 80) / (pi ** 4)
-    b = -(64 * pi - 88) / (pi ** 3)
-    c = (16 * pi - 29) / (pi ** 2)
+
+    a = (64 * pi - 80) / (pi**4)
+    b = -(64 * pi - 88) / (pi**3)
+    c = (16 * pi - 29) / (pi**2)
     d = 3 / pi
-    
-    return a * (t ** 4) + b * (t ** 3) + c * (t ** 2) + d * t
+
+    return a * (t**4) + b * (t**3) + c * (t**2) + d * t
 
 
 def ncadr_loss(
@@ -75,6 +75,7 @@ def ncadr_loss(
     loss_vals = double_trough_curve(K)
     return loss_vals.mean()
 
+
 def ncadr(model: nn.Module, config: TrainingConfig, surface_points: Tensor, t: float) -> dict[str, Tensor]:
     volume_points = sample_volume(n=config.volume_points, bounds=config.volume_bounds, device=config.device)
     n_near = min(config.near_surface_points, surface_points.shape[0])
@@ -83,7 +84,7 @@ def ncadr(model: nn.Module, config: TrainingConfig, surface_points: Tensor, t: f
 
     surface_points = surface_points.requires_grad_(True)
     near_points.requires_grad_(True)
-    
+
     x_for_eikonal = torch.cat([surface_points, near_points], dim=0)
     x_for_eikonal.requires_grad_(True)
 
@@ -91,7 +92,7 @@ def ncadr(model: nn.Module, config: TrainingConfig, surface_points: Tensor, t: f
         y_manifold = model(surface_points)
         y_volume = model(volume_points)
         y_near = model(near_points)
-        
+
         y_for_eikonal = model(x_for_eikonal)
 
     loss_weights = config.loss_weights

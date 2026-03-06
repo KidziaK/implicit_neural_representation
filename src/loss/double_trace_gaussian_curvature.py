@@ -1,8 +1,9 @@
 import torch
 from torch import Tensor
 
+
 def generalized_charbonnier_loss(curvature: Tensor, alpha: float = 0.1, c: float = 2.0):
-    return torch.mean((curvature ** 2 + c ** 2) ** alpha - (c ** 2) ** alpha)
+    return torch.mean((curvature**2 + c**2) ** alpha - (c**2) ** alpha)
 
 
 def double_trace_loss(x: Tensor, grad_y: Tensor, num_samples: int = 2) -> Tensor:
@@ -18,7 +19,7 @@ def double_trace_loss(x: Tensor, grad_y: Tensor, num_samples: int = 2) -> Tensor
                 outputs=grad_v_prod,
                 inputs=x,
                 grad_outputs=torch.ones_like(grad_v_prod),
-                retain_graph=True
+                retain_graph=True,
             )[0]
 
         laplacian_estimates.append((v * Hv).sum(dim=-1))
@@ -27,6 +28,6 @@ def double_trace_loss(x: Tensor, grad_y: Tensor, num_samples: int = 2) -> Tensor
     mean_laplacian = torch.stack(laplacian_estimates).mean(dim=0)
     mean_trace_h2 = torch.stack(trace_h2_estimates).mean(dim=0)
 
-    curvature = (mean_laplacian ** 2 - mean_trace_h2)
+    curvature = mean_laplacian**2 - mean_trace_h2
 
     return generalized_charbonnier_loss(curvature)

@@ -3,13 +3,21 @@ import numpy as np
 from torch import nn, Tensor
 from enum import Enum
 
+
 class ActivationType(Enum):
     RELU = 1
     SOFTPLUS = 2
     SIREN = 3
 
+
 class SineLayer(nn.Module):
-    def __init__(self, in_features: int, out_features: int, is_first: bool = False, omega_0: float = 30.0) -> None:
+    def __init__(
+        self,
+        in_features: int,
+        out_features: int,
+        is_first: bool = False,
+        omega_0: float = 30.0,
+    ) -> None:
         super().__init__()
         self.omega_0 = omega_0
         self.is_first = is_first
@@ -24,7 +32,8 @@ class SineLayer(nn.Module):
             else:
                 self.linear.weight.uniform_(
                     -np.sqrt(6 / self.in_features) / self.omega_0,
-                    np.sqrt(6 / self.in_features) / self.omega_0)
+                    np.sqrt(6 / self.in_features) / self.omega_0,
+                )
 
     def forward(self, x: Tensor) -> Tensor:
         return torch.sin(self.omega_0 * self.linear(x))
@@ -36,7 +45,7 @@ class SDFNet(nn.Module):
         in_features: int = 3,
         hidden_layers: int = 4,
         hidden_dim: int = 256,
-        activation_type: ActivationType = ActivationType.SIREN
+        activation_type: ActivationType = ActivationType.SIREN,
     ) -> None:
         super().__init__()
         self.activation_type = activation_type
@@ -63,7 +72,7 @@ class SDFNet(nn.Module):
         layers.append(nn.Linear(hidden_dim, 1))
         self.net = nn.Sequential(*layers)
 
-        if activation_type==ActivationType.SIREN:
+        if activation_type == ActivationType.SIREN:
             with torch.no_grad():
                 self.net[-1].weight.uniform_(-np.sqrt(6 / hidden_dim) / 30, np.sqrt(6 / hidden_dim) / 30)
 

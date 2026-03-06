@@ -5,11 +5,19 @@ from dataclasses import dataclass
 from loguru import logger
 from time import time
 
+
 @dataclass
 class TrainingResult:
     training_time_s: float
 
-def train(model: nn.Module, config: TrainingConfig, optimizer: optim.Optimizer, loss_function: LossFunction, surface_points: Tensor) -> TrainingResult:
+
+def train(
+    model: nn.Module,
+    config: TrainingConfig,
+    optimizer: optim.Optimizer,
+    loss_function: LossFunction,
+    surface_points: Tensor,
+) -> TrainingResult:
     model.train()
 
     st = time()
@@ -28,7 +36,10 @@ def train(model: nn.Module, config: TrainingConfig, optimizer: optim.Optimizer, 
         optimizer.step()
 
         if epoch % 100 == 0:
-            logger.info(f"Epoch [{epoch}/{config.epochs}] | Loss {loss.item():.4f}", loss_dict=loss_dict)
+            logger.info(
+                f"Epoch [{epoch}/{config.epochs}] | Loss {loss.item():.4f}",
+                loss_dict=loss_dict,
+            )
 
     ed = time()
 

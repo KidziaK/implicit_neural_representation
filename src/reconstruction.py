@@ -20,7 +20,7 @@ def extract_and_visualize_mesh(
     x_lin = np.linspace(-bounds, bounds, resolution)
     y_lin = np.linspace(-bounds, bounds, resolution)
     z_lin = np.linspace(-bounds, bounds, resolution)
-    X, Y, Z = np.meshgrid(x_lin, y_lin, z_lin, indexing='ij')
+    X, Y, Z = np.meshgrid(x_lin, y_lin, z_lin, indexing="ij")
 
     grid_points = np.vstack([X.ravel(), Y.ravel(), Z.ravel()]).T
     grid_points_tensor = torch.tensor(grid_points, dtype=torch.float32, device=config.device)
@@ -32,12 +32,11 @@ def extract_and_visualize_mesh(
 
     with torch.no_grad():
         for i in range(0, grid_points_tensor.shape[0], chunk_size):
-            chunk = grid_points_tensor[i:i + chunk_size]
+            chunk = grid_points_tensor[i : i + chunk_size]
             sdf_chunk = model(chunk)
             sdf_values.append(sdf_chunk.cpu().numpy())
 
-    sdf_volume = np.concatenate(sdf_values).reshape(
-        (resolution, resolution, resolution))
+    sdf_volume = np.concatenate(sdf_values).reshape((resolution, resolution, resolution))
 
     logger.info("Starting reconstruction of mesh")
 
