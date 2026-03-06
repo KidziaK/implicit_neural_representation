@@ -19,8 +19,9 @@ venv.bak/
 # Project specific
 temp/
 uv.lock
-data/
 visualization/
 
 *.pdf
 .DS_Store
+
+output/

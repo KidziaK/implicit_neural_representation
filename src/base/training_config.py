@@ -1,50 +1,46 @@
 import torch
-from dataclasses import dataclass, field, fields
-from typing import Callable, ClassVar
-
-FlexibleLossWeight = Callable[[float], float] | float
-
-
-class LambdaConverterMeta(type):
-    def __new__(mcs, name, bases, namespace):
-        cls = super().__new__(mcs, name, bases, namespace)
-        orig_init = cls.__init__
-
-        def __init__(self, *args, **kwargs):
-            orig_init(self, *args, **kwargs)
-            for f in fields(self):
-                value = getattr(self, f.name)
-                if isinstance(value, (float, int)):
-                    setattr(self, f.name, _const_weight(float(value)))
-
-        cls.__init__ = __init__
-        return cls
+from dataclasses import dataclass, field
+from typing import Callable
+from pathlib import Path
 
 
-def _const_weight(v: float) -> Callable[[float], float]:
-    return lambda x: v
+class FlexibleLossWeight:
+    def __init__(self, value: float | Callable[[float], float] = 0.0):
+        self.value = value
+
+    def __get__(self, instance, owner):
+        if instance is None:
+            return self
+        return instance.__dict__.get(self.name, self)
+
+    def __set__(self, instance, value):
+        if isinstance(value, FlexibleLossWeight):
+            instance.__dict__[self.name] = value
+        else:
+            instance.__dict__[self.name] = FlexibleLossWeight(value)
+
+    def __set_name__(self, owner, name):
+        self.name = name
+
+    def __call__(self, t: float) -> float:
+        if callable(self.value):
+            return float(self.value(t))
+        return float(self.value)
 
 
 @dataclass
-class LossWeights(metaclass=LambdaConverterMeta):
-    dirichlet: FlexibleLossWeight = 7000.0
-    eikonal: FlexibleLossWeight = 50.0
-    developable: FlexibleLossWeight = 10.0
-    dnm: FlexibleLossWeight = 600.0
-    ncr: FlexibleLossWeight = 10.0
-    nsh: FlexibleLossWeight = 10.0
-
-    _weight_names: ClassVar[frozenset[str]] = frozenset({"dirichlet", "eikonal", "developable", "dnm", "ncr", "nsh"})
-
-    def __setattr__(self, name: str, value: FlexibleLossWeight) -> None:
-        if name in type(self)._weight_names and isinstance(value, (int, float)):
-            value = _const_weight(float(value))
-        super().__setattr__(name, value)
+class LossWeights:
+    dirichlet: FlexibleLossWeight = FlexibleLossWeight(7000.0)
+    eikonal: FlexibleLossWeight = FlexibleLossWeight(50.0)
+    developable: FlexibleLossWeight = FlexibleLossWeight(10.0)
+    dnm: FlexibleLossWeight = FlexibleLossWeight(600.0)
+    ncr: FlexibleLossWeight = FlexibleLossWeight(10.0)
+    nsh: FlexibleLossWeight = FlexibleLossWeight(10.0)
 
 
 @dataclass
 class TrainingConfig:
-    mesh_input_path: str
+    mesh_input_path: str | Path
     loss_function: Callable
 
     hidden_dim: int = 256
@@ -70,4 +66,4 @@ class TrainingConfig:
 
     reconstruction_resolution: int = 256
     visualize: bool = False
-    output_path: str | None = None
+    output_path: str | Path | None = None

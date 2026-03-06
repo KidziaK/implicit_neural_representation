@@ -51,10 +51,11 @@ def extract_and_visualize_mesh(
     reconstructed_mesh.triangles = o3d.utility.Vector3iVector(triangles)
     reconstructed_mesh.compute_vertex_normals()
 
-    output_path = config.output_path
+    output_path = config.output_path and Path(config.output_path)
 
     if output_path:
         logger.info(f"Saving reconstructed mesh to: {output_path}")
-        o3d.io.write_triangle_mesh(Path(output_path), reconstructed_mesh)
+        output_path.parent.mkdir(parents=True, exist_ok=True)
+        o3d.io.write_triangle_mesh(output_path, reconstructed_mesh)
 
     return reconstructed_mesh
