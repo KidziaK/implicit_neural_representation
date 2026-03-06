@@ -13,12 +13,12 @@ if __name__ == "__main__":
 
     seeds = [42]
     experiment_name = "dummy"
-    epochs = 50
+    epochs = 100
     parts = ["00800003"]
     losses = [loss.developable_loss]
 
     for loss_function, part_name, seed in product(losses, parts, seeds):
-        output_path = Path(f"output/abc/{experiment_name}/{part_name}_{loss_function.__name__}_{epochs}.obj")
+        output_path = Path(f"output/abc/{experiment_name}/{part_name}_{loss_function.__name__}_{epochs}.glb")
 
         if output_path.exists():
             continue
