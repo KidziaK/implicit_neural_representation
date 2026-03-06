@@ -28,6 +28,7 @@ explicit = true
 
 [dependency-groups]
 dev = [
+    "pre-commit>=4.0.0",
     "pyrefly>=0.55.0",
     "ruff>=0.15.5",
 ]
