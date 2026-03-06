@@ -64,7 +64,7 @@ class TrainingConfig:
 
     volume_bounds: float = 1.1
 
-    testing_mode: bool = False
+    testing: bool = False
     reconstruction_resolution: int = 256
     visualize: bool = False
     output_path: str | Path | None = None

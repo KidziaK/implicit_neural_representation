@@ -7,5 +7,5 @@ from inr.experiment import run_experiment
 
 @pytest.mark.parametrize("loss", losses)
 def test_custom_loss(loss: LossFunction):
-    print(TrainingConfig.testing_mode)
-    run_experiment(TrainingConfig(loss_function=loss, epochs=1))
+    config = TrainingConfig(loss_function=loss, epochs=1, hidden_dim=1, testing=True)
+    run_experiment(config)

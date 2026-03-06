@@ -10,7 +10,7 @@ import numpy as np
 from inr.measure import chamfer_distance, hausdorff_distance
 
 
-def run_experiment(config: TrainingConfig, visualize: bool = False):
+def run_experiment(config: TrainingConfig, visualize: bool = False) -> None:
     model = SDFNet(
         in_features=3,
         hidden_dim=config.hidden_dim,
@@ -36,13 +36,13 @@ def run_experiment(config: TrainingConfig, visualize: bool = False):
 
     logger.info(f"Training Done, total training time: {int(result.training_time_s)}s")
 
+    if config.testing:
+        return
+
     mesh = extract_and_visualize_mesh(
         model=model,
         config=config,
     )
-
-    if config.testing_mode:
-        return
 
     logger.info("Sampling 100k points from original and reconstructed meshes for evaluation...")
     original_points_tensor = load_point_cloud_from_mesh_file(
