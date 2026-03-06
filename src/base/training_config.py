@@ -57,7 +57,6 @@ class TrainingConfig:
     bidirectional_ncr: bool = True
 
     surface_points: int = 20000
-    near_surface_points: int = 10000
     volume_points: int = 10000
 
     learning_rate: float = 5e-5
