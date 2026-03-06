@@ -8,6 +8,16 @@ from .dnm import dnm_loss
 from .eikonal import eikonal_loss_from_points_values
 
 
+def ncr_linear_decay(t: float) -> float:
+    if t < 0.2:
+        return 10.0
+    if t < 0.5:
+        return 10.0 + (0.001 - 10.0) * (t - 0.2) / (0.5 - 0.2)
+    if t < 1.0:
+        return 0.001 + (0.0 - 0.001) * (t - 0.5) / (1.0 - 0.5)
+    return 0.0
+
+
 def double_trough_curve(curvature: Tensor) -> Tensor:
     pi = math.pi
     t = curvature.abs()
