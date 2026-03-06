@@ -16,7 +16,7 @@ def train(model: nn.Module, config: TrainingConfig, optimizer: optim.Optimizer, 
 
     logger.info("Training started")
 
-    for epoch in range(config.epochs):
+    for epoch in range(config.epochs + 1):
         optimizer.zero_grad()
 
         t = epoch / config.epochs

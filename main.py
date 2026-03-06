@@ -1,6 +1,8 @@
 import torch
 import open3d as o3d
 from torch import optim
+
+from base.training_config import LossWeights
 from src.reconstruction import extract_and_visualize_mesh
 from src.base.training_config import TrainingConfig
 from src.sdf_net import SDFNet, ActivationType
@@ -10,6 +12,16 @@ from src.io.load import load_point_cloud_from_mesh_file
 from loguru import logger
 import numpy as np
 from src.measure import chamfer_distance, hausdorff_distance
+
+def ncr_linear_decay(t: float) -> float:
+    if t < 0.2:
+        return 10.0
+    if t < 0.5:
+        return 10.0 + (0.001 - 10.0) * (t - 0.2) / (0.5 - 0.2)
+    if t < 1.0:
+        return 0.001 + (0.0 - 0.001) * (t - 0.5) / (1.0 - 0.5)
+    return 0.0
+
 
 def run_experiment(config: TrainingConfig):
     model = SDFNet(
@@ -69,8 +81,10 @@ if __name__ == "__main__":
     training_config = TrainingConfig(
         mesh_input_path=r"C:\Users\kidzi\Downloads\abc_0000_obj_v00\00000002\00000002_1ffb81a71e5b402e966b9341_trimesh_001.obj",
         epochs=1000,
-        loss_function=loss.ncadr,
-        volume_points=10000
+        loss_function=loss.developable,
+        volume_points=10000,
     )
+
+    # training_config.loss_weights.ncr = ncr_linear_decay
 
     run_experiment(training_config)

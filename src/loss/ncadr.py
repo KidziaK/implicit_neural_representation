@@ -7,6 +7,7 @@ from .dirichlet import dirichlet_loss
 from .dnm import dnm_loss
 from .eikonal import eikonal_loss_from_points_values
 
+
 def double_trough_curve(curvature: Tensor) -> Tensor:
     pi = math.pi
     t = curvature.abs()
@@ -18,27 +19,34 @@ def double_trough_curve(curvature: Tensor) -> Tensor:
     
     return a * (t ** 4) + b * (t ** 3) + c * (t ** 2) + d * t
 
-def ncadr_loss(x: Tensor, y: Tensor, eps: float = 1e-12) -> Tensor:
+
+def ncadr_loss(
+    x: Tensor,
+    y: Tensor,
+    eps: float = 1e-12,
+    min_grad_norm_sq: float = 0.01,
+    max_abs_k: float = 10.0,
+) -> Tensor:
     grad_y = torch.autograd.grad(
         outputs=y,
         inputs=x,
         grad_outputs=torch.ones_like(y),
         create_graph=True,
         retain_graph=True,
-    )[0] 
+    )[0]
 
     H_rows = []
     for i in range(3):
-        grad_y_i = grad_y[..., i:i+1] 
+        grad_y_i = grad_y[..., i : i + 1]
         H_i = torch.autograd.grad(
             outputs=grad_y_i,
             inputs=x,
             grad_outputs=torch.ones_like(grad_y_i),
             create_graph=True,
             retain_graph=True,
-        )[0] 
+        )[0]
         H_rows.append(H_i)
-    
+
     H = torch.stack(H_rows, dim=-1)
 
     extended_matrix = torch.empty(grad_y.shape[:-1] + (4, 4), device=x.device, dtype=x.dtype)
@@ -50,7 +58,9 @@ def ncadr_loss(x: Tensor, y: Tensor, eps: float = 1e-12) -> Tensor:
     det = torch.linalg.det(extended_matrix)
 
     grad_norm2 = grad_y.norm(dim=-1) ** 2
-    K = (-1.0 / (grad_norm2 + eps)) * det
+    grad_norm2_safe = grad_norm2.clamp(min=min_grad_norm_sq)
+    K = (-1.0 / (grad_norm2_safe + eps)) * det
+    K = K.clamp(min=-max_abs_k, max=max_abs_k)
 
     loss_vals = double_trough_curve(K)
     return loss_vals.mean()

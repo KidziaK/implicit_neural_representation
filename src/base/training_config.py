@@ -1,18 +1,8 @@
 import torch
 from dataclasses import dataclass, field, fields
-from typing import Callable
+from typing import Callable, ClassVar
 
 FlexibleLossWeight = Callable[[float], float] | float
-
-
-def ncr_linear_decay(t: float) -> float:
-    if t < 0.2:
-        return 10.0
-    if t < 0.5:
-        return 10.0 + (0.001 - 10.0) * (t - 0.2) / (0.5 - 0.2)
-    if t < 1.0:
-        return 0.001 + (0.0 - 0.001) * (t - 0.5) / (1.0 - 0.5)
-    return 0.0
 
 
 class LambdaConverterMeta(type):
@@ -25,12 +15,14 @@ class LambdaConverterMeta(type):
             for f in fields(self):
                 value = getattr(self, f.name)
                 if isinstance(value, (float, int)):
-                    def make_lambda(v):
-                        return lambda x: v
-                    setattr(self, f.name, make_lambda(value))
+                    setattr(self, f.name, _const_weight(float(value)))
 
         cls.__init__ = __init__
         return cls
+
+def _const_weight(v: float) -> Callable[[float], float]:
+    return lambda x: v
+
 
 @dataclass
 class LossWeights(metaclass=LambdaConverterMeta):
@@ -40,6 +32,13 @@ class LossWeights(metaclass=LambdaConverterMeta):
     dnm: FlexibleLossWeight = 600.0
     ncr: FlexibleLossWeight = 10.0
     nsh: FlexibleLossWeight = 10.0
+
+    _weight_names: ClassVar[frozenset[str]] = frozenset({"dirichlet", "eikonal", "developable", "dnm", "ncr", "nsh"})
+
+    def __setattr__(self, name: str, value: FlexibleLossWeight) -> None:
+        if name in type(self)._weight_names and isinstance(value, (int, float)):
+            value = _const_weight(float(value))
+        super().__setattr__(name, value)
 
 @dataclass
 class TrainingConfig:
