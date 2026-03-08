@@ -20,6 +20,8 @@ def ncr_linear_decay(t: float) -> float:
 if __name__ == "__main__":
     if not torch.cuda.is_available():
         logger.warning("CUDA not available, training on CPU")
+    else:
+        torch.cuda.init()
 
     seeds = [42]
     experiment_name = "dummy"
@@ -38,8 +40,7 @@ if __name__ == "__main__":
             loss_weights=LossWeights(
                 dirichlet=7000,
                 dnm=600,
-                eikonal=50,
-                gaussian_curvature=ncr_linear_decay
+                eikonal=50
             ),
             output_path=str(output_path),
         )
