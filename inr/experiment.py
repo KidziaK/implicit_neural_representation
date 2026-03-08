@@ -13,7 +13,7 @@ from .measure import chamfer_distance, hausdorff_distance
 from pathlib import Path
 
 
-def run_experiment(config: TrainingConfig, visualize: bool = False, skip_reconstruction: bool = False) -> None:
+def run_experiment(config: TrainingConfig, input_path: Path, output_path: Path | None = None, visualize: bool = False, skip_reconstruction: bool = False) -> None:
     model = SDFNet(
         in_features=3,
         hidden_dim=config.hidden_dim,
@@ -24,7 +24,7 @@ def run_experiment(config: TrainingConfig, visualize: bool = False, skip_reconst
     optimizer = optim.Adam(model.parameters(), lr=config.learning_rate)
 
     surface_points = load_point_cloud_from_mesh_file(
-        mesh_file_path=config.mesh_input_path,
+        mesh_file_path=input_path,
         n=config.surface_points,
         device=get_device(),
     )
@@ -44,11 +44,12 @@ def run_experiment(config: TrainingConfig, visualize: bool = False, skip_reconst
     mesh = extract_and_visualize_mesh(
         model=model,
         config=config,
+        output_path=output_path
     )
 
     logger.info("Sampling 100k points from original and reconstructed meshes for evaluation...")
     original_points_tensor = load_point_cloud_from_mesh_file(
-        mesh_file_path=config.mesh_input_path,
+        mesh_file_path=input_path,
         n=100000,
         bounds=config.volume_bounds,
         device="cpu",
@@ -71,7 +72,7 @@ def run_experiment(config: TrainingConfig, visualize: bool = False, skip_reconst
         training_result=result.model_dump(),
         chamfer_distance=chamfer_dist,
         hausdorff_distance=hausdorff_dist,
-        config=config.model_dump(),
+        config=config.model_dump(exclude={"loss_weights"}),
     )
 
-    json.dump(metadata, Path(config.output_path).with_suffix(".json").open(mode="w+"), indent=4)
+    json.dump(metadata, output_path.with_suffix(".json").open(mode="w+"), indent=4)

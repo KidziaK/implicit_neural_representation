@@ -13,6 +13,7 @@ from loguru import logger
 def extract_and_visualize_mesh(
     model: nn.Module,
     config: TrainingConfig,
+    output_path: Path | None = None,
 ) -> o3d.geometry.TriangleMesh:
     model.eval()
 
@@ -52,8 +53,6 @@ def extract_and_visualize_mesh(
     reconstructed_mesh.vertices = o3d.utility.Vector3dVector(vertices)
     reconstructed_mesh.triangles = o3d.utility.Vector3iVector(triangles)
     reconstructed_mesh.compute_vertex_normals()
-
-    output_path = config.output_path and Path(config.output_path)
 
     if output_path:
         logger.info(f"Saving reconstructed mesh to: {output_path}")
