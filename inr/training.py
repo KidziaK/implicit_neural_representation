@@ -1,6 +1,5 @@
 from torch import nn, optim, Tensor
-from .base.training_config import TrainingConfig
-from .base.loss import LossFunction
+from .training_config import TrainingConfig, LossFunction
 from dataclasses import dataclass
 from loguru import logger
 from time import time

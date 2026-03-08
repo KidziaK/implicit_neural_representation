@@ -1,13 +1,6 @@
-import torch
-import inspect
-import textwrap
-from dataclasses import dataclass, field
-from pathlib import Path
-from pydantic import BaseModel
 from typing import Any, Callable, Union
 from pydantic import GetCoreSchemaHandler
 from pydantic_core import core_schema
-
 
 WeightInput = Union[float, Callable[[float], float], dict[str, Any]]
 
@@ -26,10 +19,6 @@ def _schedule_from_dict(data: dict[str, Any]) -> Callable[[float], float]:
         end = float(data["end"])
         return lambda t: start + (end - start) * t
     raise ValueError(f"Unknown schedule type: {kind!r}")
-
-
-def _dict_from_callable(fn: Callable[[float], float]) -> dict[str, Any]:
-    return {"type": "callable", "fallback": 1.0}
 
 
 class FlexibleLossWeight:
@@ -52,18 +41,26 @@ class FlexibleLossWeight:
             return self._value
         return self._value(t)
 
-    def _to_json_compatible(self) -> float | dict[str, Any]:
+    def _to_json_compatible(self) -> float | dict[str, Any] | None:
         if self._is_constant:
             return self._value
-        return _dict_from_callable(self._value)
+        return None
 
     @classmethod
-    def _from_json_compatible(cls, data: float | dict[str, Any]) -> "FlexibleLossWeight":
+    def _from_json_compatible(cls, data: float | dict[str, Any] | None) -> "FlexibleLossWeight":
+        if data is None:
+            raise TypeError(
+                "Cannot deserialize loss weight from JSON null. "
+                "Use a constant number or a schedule dict (e.g. {\"type\": \"step\", \"before\": 0, \"after\": 10, \"t_threshold\": 0.5})."
+            )
         if isinstance(data, (int, float)):
             return cls(float(data))
         if isinstance(data, dict):
             if data.get("type") == "callable":
-                return cls(float(data.get("fallback", 1.0)))
+                raise TypeError(
+                    "Cannot deserialize callable loss weight from JSON. "
+                    "Use a constant number or a schedule dict (e.g. {\"type\": \"step\", \"before\": 0, \"after\": 10, \"t_threshold\": 0.5})."
+                )
             return cls(data)
         raise TypeError(f"Cannot build FlexibleLossWeight from {type(data)}")
 
@@ -84,50 +81,10 @@ class FlexibleLossWeight:
                 "FlexibleLossWeight must be a float, a callable (float -> float), or a schedule dict"
             )
 
-        def serialize(value: FlexibleLossWeight) -> float | dict[str, Any]:
+        def serialize(value: FlexibleLossWeight) -> float | dict[str, Any] | None:
             return value._to_json_compatible()
 
         return core_schema.no_info_plain_validator_function(
             validate,
             serialization=core_schema.plain_serializer_function_ser_schema(serialize),
         )
-
-
-class LossWeights(BaseModel):
-    dirichlet: FlexibleLossWeight = FlexibleLossWeight(7000.0)
-    eikonal: FlexibleLossWeight = FlexibleLossWeight(50.0)
-    developable: FlexibleLossWeight = FlexibleLossWeight(10.0)
-    dnm: FlexibleLossWeight = FlexibleLossWeight(600.0)
-    ncr: FlexibleLossWeight = FlexibleLossWeight(10.0)
-    nsh: FlexibleLossWeight = FlexibleLossWeight(10.0)
-
-
-class TrainingConfig(BaseModel):
-    loss_function: Callable
-
-    mesh_input_path: str | Path = Path("data/abc/00800003.obj")
-
-    hidden_dim: int = 256
-    hidden_layers: int = 4
-
-    device: str = "cuda" if torch.cuda.is_available() else "cpu"
-
-    epochs: int = 10000
-
-    loss_weights: LossWeights = field(default_factory=LossWeights)
-
-    dnm_alpha: float = 100.0
-
-    bidirectional_ncr: bool = True
-
-    surface_points: int = 20000
-    volume_points: int = 10000
-
-    learning_rate: float = 5e-5
-
-    volume_bounds: float = 1.1
-
-    testing: bool = False
-    reconstruction_resolution: int = 256
-    visualize: bool = False
-    output_path: str | Path | None = None

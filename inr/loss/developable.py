@@ -2,7 +2,7 @@ import torch
 from torch import nn, Tensor, autograd
 from .dirichlet import dirichlet_loss
 from .double_trace_gaussian_curvature import double_trace_loss
-from ..base.training_config import TrainingConfig
+from ..training_config import TrainingConfig
 from .sample import sample_volume, sample_near_surface
 from .eikonal import eikonal_loss_from_grad
 from .dnm import dnm_loss

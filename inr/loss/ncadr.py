@@ -1,7 +1,7 @@
 import math
 import torch
 from torch import Tensor, nn
-from ..base.training_config import TrainingConfig
+from ..training_config import TrainingConfig
 from .sample import sample_volume, sample_near_surface
 from .dirichlet import dirichlet_loss
 from .dnm import dnm_loss

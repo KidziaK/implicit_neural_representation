@@ -1,5 +1,5 @@
 import torch
-from inr.base.training_config import TrainingConfig, LossWeights
+from inr.training_config import TrainingConfig, LossWeights
 import inr.loss as loss
 from loguru import logger
 from inr.experiment import run_experiment
@@ -23,14 +23,14 @@ if __name__ == "__main__":
         torch.manual_seed(seed)
 
         training_config = TrainingConfig(
-            mesh_input_path=Path(f"data/abc/{part_name}.obj"),
+            mesh_input_path=str(Path(f"data/abc/{part_name}.obj")),
             epochs=epochs,
             loss_function=loss_function,
             volume_points=10000,
             loss_weights=LossWeights(
                 developable=lambda t: 0 if t < 0.5 else 10
             ),
-            output_path=output_path,
+            output_path=str(output_path),
         )
 
         run_experiment(training_config)

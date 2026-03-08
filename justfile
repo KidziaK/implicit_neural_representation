@@ -1,3 +1,5 @@
+set windows-shell := ["powershell.exe", "-c"]
+
 pyre:
     uv run pyrefly check
 

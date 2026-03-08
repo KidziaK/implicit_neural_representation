@@ -1,6 +1,6 @@
 import json
 import pytest
-from inr.base.training_config import FlexibleLossWeight, LossWeights, TrainingConfig
+from inr.training_config import FlexibleLossWeight, LossWeights, TrainingConfig
 
 
 def test_flexible_loss_weight_constant_float():
@@ -56,7 +56,12 @@ def test_flexible_loss_weight_to_json_constant():
 
 def test_flexible_loss_weight_to_json_callable():
     w = FlexibleLossWeight(lambda t: t)
-    assert w._to_json_compatible() == {"type": "callable", "fallback": 1.0}
+    assert w._to_json_compatible() is None
+
+
+def test_flexible_loss_weight_from_json_none_raises():
+    with pytest.raises(TypeError, match="Cannot deserialize loss weight from JSON null"):
+        FlexibleLossWeight._from_json_compatible(None)
 
 
 def test_flexible_loss_weight_from_json_float():
@@ -64,9 +69,9 @@ def test_flexible_loss_weight_from_json_float():
     assert w(0.0) == 7000.0
 
 
-def test_flexible_loss_weight_from_json_callable_placeholder():
-    w = FlexibleLossWeight._from_json_compatible({"type": "callable", "fallback": 5.0})
-    assert w(0.0) == 5.0
+def test_flexible_loss_weight_from_json_callable_raises():
+    with pytest.raises(TypeError, match="Cannot deserialize callable loss weight"):
+        FlexibleLossWeight._from_json_compatible({"type": "callable", "fallback": 5.0})
 
 
 def test_flexible_loss_weight_from_json_dict_schedule():
@@ -112,11 +117,11 @@ def test_training_config_model_dump_json_with_loss_weights():
     assert data["loss_weights"]["dirichlet"] == 7000.0
 
 
-def test_training_config_model_dump_json_with_callable_weight():
+def test_training_config_model_dump_json_with_callable_weight_serializes_as_null():
     cfg = TrainingConfig(
         loss_function=lambda x: x,
         loss_weights=LossWeights(developable=lambda t: 10),
     )
     j = cfg.model_dump_json(exclude={"loss_function"})
     data = json.loads(j)
-    assert data["loss_weights"]["developable"] == {"type": "callable", "fallback": 1.0}
+    assert data["loss_weights"]["developable"] is None

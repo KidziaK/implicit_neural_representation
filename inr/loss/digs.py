@@ -1,7 +1,7 @@
 import torch
 from torch import nn, Tensor
 from .dirichlet import dirichlet_loss
-from ..base.training_config import TrainingConfig
+from ..training_config import TrainingConfig
 from .sample import sample_volume
 from .eikonal import eikonal_loss_from_points_values
 from .dnm import dnm_loss

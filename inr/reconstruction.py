@@ -1,7 +1,7 @@
 import torch
 import numpy as np
 import open3d as o3d
-from .base.training_config import TrainingConfig
+from .training_config import TrainingConfig
 from torch import nn
 from pathlib import Path
 from skimage import measure

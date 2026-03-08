@@ -2,13 +2,14 @@ import json
 import open3d as o3d
 from torch import optim
 from inr.reconstruction import extract_and_visualize_mesh
-from inr.base.training_config import TrainingConfig
+from inr.training_config import TrainingConfig
+from inr.load import load_point_cloud_from_mesh_file
 from inr.sdf_net import SDFNet, ActivationType
 from inr.training import train
-from inr.io.load import load_point_cloud_from_mesh_file
 from loguru import logger
 import numpy as np
 from inr.measure import chamfer_distance, hausdorff_distance
+from pathlib import Path
 
 
 def run_experiment(config: TrainingConfig, visualize: bool = False) -> None:
@@ -70,7 +71,7 @@ def run_experiment(config: TrainingConfig, visualize: bool = False) -> None:
         training_time=result.training_time_s,
         chamfer_distance=chamfer_dist,
         hausdorff_distance=hausdorff_dist,
-        config=config.model_dump_json()
+        config=config.model_dump(exclude={"loss_function"}),
     )
 
-    json.dump(metadata, config.output_path.with_suffix(".json").open(mode="w+"))
+    json.dump(metadata, Path(config.output_path).with_suffix(".json").open(mode="w+"), indent=4)

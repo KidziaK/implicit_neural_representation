@@ -1,7 +1,6 @@
 import pytest
 from inr.loss import losses
-from inr.base.loss import LossFunction
-from inr.base.training_config import TrainingConfig
+from inr.training_config import TrainingConfig, LossFunction
 from inr.experiment import run_experiment
 
 
