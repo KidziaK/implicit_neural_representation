@@ -6,27 +6,23 @@ from torch import Tensor, nn
 
 from .flexible_loss_weight import FlexibleLossWeight
 
-LossFunction = Callable[[nn.Module, "TrainingConfig", Tensor, float], dict[str, Tensor]]
+LossFunction = Callable[[nn.Module, "TrainingConfig", Tensor, float, Tensor], dict[str, Tensor]]
 
 
 class LossWeights(BaseModel):
-    dirichlet: FlexibleLossWeight = FlexibleLossWeight(7000.0)
-    eikonal: FlexibleLossWeight = FlexibleLossWeight(50.0)
-    developable: FlexibleLossWeight = FlexibleLossWeight(10.0)
-    dnm: FlexibleLossWeight = FlexibleLossWeight(600.0)
-    ncr: FlexibleLossWeight = FlexibleLossWeight(10.0)
-    nsh: FlexibleLossWeight = FlexibleLossWeight(10.0)
+    dirichlet: FlexibleLossWeight | None = None
+    eikonal: FlexibleLossWeight | None = None
+    gauss_bonnet: FlexibleLossWeight | None = None
+    dnm: FlexibleLossWeight | None = None
+    gaussian_curvature: FlexibleLossWeight | None = None
+    singular_hessian: FlexibleLossWeight | None = None
 
 
 class TrainingConfig(BaseModel):
-    loss_function: Callable
-
     mesh_input_path: str = "data/abc/00800003.obj"
 
     hidden_dim: int = 256
     hidden_layers: int = 4
-
-    device: str = "cuda" if torch.cuda.is_available() else "cpu"
 
     epochs: int = 10000
 

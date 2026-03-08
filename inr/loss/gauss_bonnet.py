@@ -2,7 +2,7 @@ import torch
 from torch import Tensor
 
 
-def double_trace_loss(x: Tensor, grad_y: Tensor, num_samples: int = 2) -> Tensor:
+def gauss_bonnet_loss(x: Tensor, grad_y: Tensor, num_samples: int = 2) -> Tensor:
     laplacian_estimates = []
     trace_h2_estimates = []
 

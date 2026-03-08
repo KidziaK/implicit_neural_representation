@@ -1,6 +1,8 @@
 import torch
 import numpy as np
 import open3d as o3d
+
+from .settings import get_device
 from .training_config import TrainingConfig
 from torch import nn
 from pathlib import Path
@@ -23,7 +25,7 @@ def extract_and_visualize_mesh(
     X, Y, Z = np.meshgrid(x_lin, y_lin, z_lin, indexing="ij")
 
     grid_points = np.vstack([X.ravel(), Y.ravel(), Z.ravel()]).T
-    grid_points_tensor = torch.tensor(grid_points, dtype=torch.float32, device=config.device)
+    grid_points_tensor = torch.tensor(grid_points, dtype=torch.float32, device=get_device())
 
     sdf_values = []
     chunk_size = 100000

@@ -1,14 +1,15 @@
 import json
 import open3d as o3d
 from torch import optim
-from inr.reconstruction import extract_and_visualize_mesh
-from inr.training_config import TrainingConfig
-from inr.load import load_point_cloud_from_mesh_file
-from inr.sdf_net import SDFNet, ActivationType
-from inr.training import train
+from .reconstruction import extract_and_visualize_mesh
+from .settings import get_device
+from .training_config import TrainingConfig
+from .load import load_point_cloud_from_mesh_file
+from .sdf_net import SDFNet, ActivationType
+from .training import train
 from loguru import logger
 import numpy as np
-from inr.measure import chamfer_distance, hausdorff_distance
+from .measure import chamfer_distance, hausdorff_distance
 from pathlib import Path
 
 
@@ -18,20 +19,19 @@ def run_experiment(config: TrainingConfig, visualize: bool = False) -> None:
         hidden_dim=config.hidden_dim,
         hidden_layers=config.hidden_layers,
         activation_type=ActivationType.SIREN,
-    ).to(config.device)
+    ).to(get_device())
 
     optimizer = optim.Adam(model.parameters(), lr=config.learning_rate)
 
     surface_points = load_point_cloud_from_mesh_file(
         mesh_file_path=config.mesh_input_path,
         n=config.surface_points,
-        device=config.device,
+        device=get_device(),
     )
 
     result = train(
         model=model,
         config=config,
-        loss_function=config.loss_function,
         optimizer=optimizer,
         surface_points=surface_points,
     )
@@ -71,7 +71,7 @@ def run_experiment(config: TrainingConfig, visualize: bool = False) -> None:
         training_time=result.training_time_s,
         chamfer_distance=chamfer_dist,
         hausdorff_distance=hausdorff_dist,
-        config=config.model_dump(exclude={"loss_function"}),
+        config=config.model_dump(),
     )
 
     json.dump(metadata, Path(config.output_path).with_suffix(".json").open(mode="w+"), indent=4)
