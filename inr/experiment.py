@@ -1,3 +1,4 @@
+import json
 import open3d as o3d
 from torch import optim
 from inr.reconstruction import extract_and_visualize_mesh
@@ -64,3 +65,12 @@ def run_experiment(config: TrainingConfig, visualize: bool = False) -> None:
 
     if visualize:
         o3d.visualization.draw_geometries([mesh])
+
+    metadata = dict(
+        training_time=result.training_time_s,
+        chamfer_distance=chamfer_dist,
+        hausdorff_distance=hausdorff_dist,
+        config=config.model_dump_json()
+    )
+
+    json.dump(metadata, config.output_path.with_suffix(".json").open(mode="w+"))
