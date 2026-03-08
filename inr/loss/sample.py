@@ -8,15 +8,13 @@ def sample_volume(n: int, bounds: float, device: str = "cuda") -> Tensor:
 
 
 def sample_near_surface(surface_points: Tensor) -> Tensor:
-    points_np = surface_points.detach().cpu().numpy()
-    tree = cKDTree(points_np)
+    num_points = surface_points.shape[0]
+    k_neighbors = min(51, num_points)
 
-    k_neighbors = min(51, len(points_np))
-    dist, _ = tree.query(points_np, k=k_neighbors, workers=-1)
-
-    sigmas = dist[:, -1:]
-    sigmas_tensor = torch.tensor(sigmas, device=surface_points.device, dtype=surface_points.dtype)
+    dist_matrix = torch.cdist(surface_points, surface_points)
+    sigmas, _ = torch.kthvalue(dist_matrix, k=k_neighbors, dim=1, keepdim=True)
 
     noise = torch.randn_like(surface_points)
-    near_points = surface_points + sigmas_tensor * noise
+    near_points = surface_points + sigmas * noise
+
     return near_points
