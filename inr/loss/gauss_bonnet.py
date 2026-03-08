@@ -24,6 +24,6 @@ def gauss_bonnet_loss(x: Tensor, grad_y: Tensor, num_samples: int = 2) -> Tensor
     mean_laplacian = torch.stack(laplacian_estimates).mean(dim=0)
     mean_trace_h2 = torch.stack(trace_h2_estimates).mean(dim=0)
 
-    curvature = 0.5 * (mean_laplacian**2 - mean_trace_h2)
+    s2 = mean_laplacian**2 - mean_trace_h2
 
-    return curvature.abs().mean()
+    return s2.abs().mean()

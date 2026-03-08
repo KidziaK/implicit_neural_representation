@@ -1,20 +1,21 @@
 import torch
-from torch import nn, optim, Tensor, tensor
-
+from torch import nn, optim, Tensor, tensor, autograd
 from .loss.dirichlet import dirichlet_loss
 from .loss.dnm import dnm_loss
-from .loss.eikonal import eikonal_loss_from_points_values
+from .loss.eikonal import eikonal_loss_from_points_values, eikonal_loss_from_grad
+from .loss.gauss_bonnet import gauss_bonnet_loss
 from .settings import get_device
 from .training_config import TrainingConfig
 from inr.sample import compute_sigmas, sample_volume
-from dataclasses import dataclass
 from loguru import logger
 from time import time
+from collections import defaultdict
+from pydantic import BaseModel
 
 
-@dataclass
-class TrainingResult:
+class TrainingResult(BaseModel):
     training_time_s: float
+    loss_dict: dict[str, float]
 
 
 def train(
@@ -28,6 +29,7 @@ def train(
     sigmas = compute_sigmas(surface_points, k=51)
     weights = config.loss_weights
     surface_points.requires_grad_()
+    loss_dict = defaultdict(lambda: 0.0)
 
     st = time()
 
@@ -47,20 +49,39 @@ def train(
         y_surface = y[:surface_points.size(0)]
         y_volume = y[surface_points.size(0):]
 
+        x.requires_grad_()
+        y.requires_grad_()
+
+        grad_y = autograd.grad(
+            outputs=y,
+            inputs=x,
+            grad_outputs=torch.ones_like(y),
+            create_graph=True,
+            allow_unused=True,
+        )[0]
+
         loss = tensor(0.0, device=get_device())
 
         if weights.dirichlet:
-            loss_dirichlet = dirichlet_loss(y_surface)
-            loss += weights.dirichlet(t) * loss_dirichlet
+            loss_dirichlet = weights.dirichlet(t) * dirichlet_loss(y_surface)
+            loss += loss_dirichlet
+            loss_dict["dirichlet"] = loss_dirichlet
 
         if weights.dnm:
-            loss_dnm = dnm_loss(y_volume)
-            loss += weights.dnm(t) * loss_dnm
+            loss_dnm = weights.dnm(t) * dnm_loss(y_volume)
+            loss += loss_dnm
+            loss_dict["dnm"] = loss_dnm.item()
 
         if weights.eikonal:
-            x.requires_grad_()
-            y.requires_grad_()
-            loss += weights.eikonal(t) * eikonal_loss_from_points_values(x, y)
+            loss_eikonal =  weights.eikonal(t) * eikonal_loss_from_grad(grad_y)
+            loss += loss_eikonal
+            loss_dict["eikonal"] = loss_eikonal.item()
+
+        if weights.gauss_bonnet:
+            loss_gauss_bonnet = weights.gauss_bonnet(t) * gauss_bonnet_loss(x, grad_y)
+            loss += loss_gauss_bonnet
+            loss_dict["gauss_bonnet"] = loss_gauss_bonnet.item()
+
 
         loss.backward()
 
@@ -73,4 +94,4 @@ def train(
 
     training_time_s = ed - st
 
-    return TrainingResult(training_time_s=training_time_s)
+    return TrainingResult(training_time_s=training_time_s, loss_dict=loss_dict)

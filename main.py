@@ -24,9 +24,9 @@ if __name__ == "__main__":
         torch.cuda.init()
 
     seeds = [42]
-    experiment_name = "dummy"
-    epochs = 100
-    parts = ["00800003"]
+    experiment_name = "bonnet2"
+    epochs = 1000
+    parts = ["00000003"]
 
     for part_name, seed in product(parts, seeds):
         output_path = Path(f"output/abc/{experiment_name}/{part_name}_{epochs}.glb")
@@ -36,11 +36,13 @@ if __name__ == "__main__":
         training_config = TrainingConfig(
             mesh_input_path=str(Path(f"data/abc/{part_name}.obj")),
             epochs=epochs,
+            surface_points=15000,
             volume_points=10000,
             loss_weights=LossWeights(
                 dirichlet=7000,
                 dnm=600,
-                eikonal=50
+                eikonal=50,
+                gauss_bonnet=ncr_linear_decay
             ),
             output_path=str(output_path),
         )

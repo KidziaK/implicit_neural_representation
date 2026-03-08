@@ -21,6 +21,5 @@ def eikonal_loss_from_points_values(x: Tensor, y: Tensor, norm: Norm = Norm.L1):
         create_graph=True,
         allow_unused=True,
     )[0]
-    if grad_y is None:
-        return torch.tensor(0.0, device=y.device, dtype=y.dtype)
+
     return eikonal_loss_from_grad(grad_y=grad_y, norm=norm)

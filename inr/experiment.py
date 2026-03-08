@@ -13,7 +13,7 @@ from .measure import chamfer_distance, hausdorff_distance
 from pathlib import Path
 
 
-def run_experiment(config: TrainingConfig, visualize: bool = False) -> None:
+def run_experiment(config: TrainingConfig, visualize: bool = False, skip_reconstruction: bool = False) -> None:
     model = SDFNet(
         in_features=3,
         hidden_dim=config.hidden_dim,
@@ -38,7 +38,7 @@ def run_experiment(config: TrainingConfig, visualize: bool = False) -> None:
 
     logger.info(f"Training Done, total training time: {int(result.training_time_s)}s")
 
-    if config.testing:
+    if skip_reconstruction:
         return
 
     mesh = extract_and_visualize_mesh(
@@ -68,7 +68,7 @@ def run_experiment(config: TrainingConfig, visualize: bool = False) -> None:
         o3d.visualization.draw_geometries([mesh])
 
     metadata = dict(
-        training_time=result.training_time_s,
+        training_result=result.model_dump(),
         chamfer_distance=chamfer_dist,
         hausdorff_distance=hausdorff_dist,
         config=config.model_dump(),
